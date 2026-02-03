@@ -153,7 +153,7 @@ export default function Home() {
               className="text-4xl lg:text-5xl font-bold text-foreground mb-4"
               style={{ fontFamily: 'var(--font-display)' }}
             >
-              CEO Virtual
+              CEO DO GI
             </motion.h1>
 
             <motion.p
