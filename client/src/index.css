@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Executive Command Center Theme */
+/* Gestão de Impacto Theme */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -42,13 +42,15 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   
-  /* Custom colors for CEO Virtual */
-  --color-electric-blue: oklch(0.65 0.2 250);
-  --color-amber-glow: oklch(0.75 0.18 70);
-  --color-emerald-success: oklch(0.7 0.17 160);
-  --color-coral-alert: oklch(0.65 0.2 25);
-  --color-slate-deep: oklch(0.15 0.02 260);
-  --color-slate-surface: oklch(0.2 0.02 260);
+  /* Gestão de Impacto Colors */
+  /* #091018 - Azul escuro principal */
+  /* #213242 - Azul médio secundário */
+  /* #ee7533 - Laranja destaque */
+  /* #ededed - Cinza claro */
+  --color-gi-dark: #091018;
+  --color-gi-medium: #213242;
+  --color-gi-orange: #ee7533;
+  --color-gi-light: #ededed;
   
   /* Typography */
   --font-display: "Space Grotesk", sans-serif;
@@ -58,74 +60,74 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 260);
-  --primary: oklch(0.55 0.2 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.01 260);
-  --secondary-foreground: oklch(0.3 0.02 260);
-  --muted: oklch(0.95 0.01 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.95 0.01 260);
-  --accent-foreground: oklch(0.15 0.02 260);
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.9 0.01 260);
-  --input: oklch(0.9 0.01 260);
-  --ring: oklch(0.55 0.2 250);
-  --chart-1: oklch(0.65 0.2 250);
-  --chart-2: oklch(0.75 0.18 70);
-  --chart-3: oklch(0.7 0.17 160);
-  --chart-4: oklch(0.6 0.15 300);
-  --chart-5: oklch(0.65 0.2 25);
-  --sidebar: oklch(0.98 0 0);
-  --sidebar-foreground: oklch(0.15 0.02 260);
-  --sidebar-primary: oklch(0.55 0.2 250);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.95 0.01 260);
-  --sidebar-accent-foreground: oklch(0.15 0.02 260);
-  --sidebar-border: oklch(0.9 0.01 260);
-  --sidebar-ring: oklch(0.55 0.2 250);
+  --background: #ededed;
+  --foreground: #091018;
+  --card: #ffffff;
+  --card-foreground: #091018;
+  --popover: #ffffff;
+  --popover-foreground: #091018;
+  --primary: #ee7533;
+  --primary-foreground: #ffffff;
+  --secondary: #213242;
+  --secondary-foreground: #ededed;
+  --muted: #d4d4d4;
+  --muted-foreground: #213242;
+  --accent: #213242;
+  --accent-foreground: #ededed;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #c4c4c4;
+  --input: #c4c4c4;
+  --ring: #ee7533;
+  --chart-1: #ee7533;
+  --chart-2: #213242;
+  --chart-3: #22c55e;
+  --chart-4: #3b82f6;
+  --chart-5: #f59e0b;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #091018;
+  --sidebar-primary: #ee7533;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #213242;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #c4c4c4;
+  --sidebar-ring: #ee7533;
 }
 
-/* Dark Theme - Executive Command Center */
+/* Dark Theme - Gestão de Impacto */
 .dark {
-  --background: oklch(0.12 0.02 260);
-  --foreground: oklch(0.92 0.01 260);
-  --card: oklch(0.16 0.02 260);
-  --card-foreground: oklch(0.92 0.01 260);
-  --popover: oklch(0.16 0.02 260);
-  --popover-foreground: oklch(0.92 0.01 260);
-  --primary: oklch(0.65 0.2 250);
-  --primary-foreground: oklch(0.12 0.02 260);
-  --secondary: oklch(0.22 0.02 260);
-  --secondary-foreground: oklch(0.85 0.01 260);
-  --muted: oklch(0.22 0.02 260);
-  --muted-foreground: oklch(0.6 0.02 260);
-  --accent: oklch(0.22 0.02 260);
-  --accent-foreground: oklch(0.92 0.01 260);
-  --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.28 0.02 260);
-  --input: oklch(0.22 0.02 260);
-  --ring: oklch(0.65 0.2 250);
-  --chart-1: oklch(0.65 0.2 250);
-  --chart-2: oklch(0.75 0.18 70);
-  --chart-3: oklch(0.7 0.17 160);
-  --chart-4: oklch(0.6 0.15 300);
-  --chart-5: oklch(0.65 0.2 25);
-  --sidebar: oklch(0.14 0.02 260);
-  --sidebar-foreground: oklch(0.92 0.01 260);
-  --sidebar-primary: oklch(0.65 0.2 250);
-  --sidebar-primary-foreground: oklch(0.12 0.02 260);
-  --sidebar-accent: oklch(0.22 0.02 260);
-  --sidebar-accent-foreground: oklch(0.92 0.01 260);
-  --sidebar-border: oklch(0.28 0.02 260);
-  --sidebar-ring: oklch(0.65 0.2 250);
+  --background: #091018;
+  --foreground: #ededed;
+  --card: #213242;
+  --card-foreground: #ededed;
+  --popover: #213242;
+  --popover-foreground: #ededed;
+  --primary: #ee7533;
+  --primary-foreground: #091018;
+  --secondary: #1a2530;
+  --secondary-foreground: #ededed;
+  --muted: #1a2530;
+  --muted-foreground: #9ca3af;
+  --accent: #1a2530;
+  --accent-foreground: #ededed;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #2d3e4f;
+  --input: #1a2530;
+  --ring: #ee7533;
+  --chart-1: #ee7533;
+  --chart-2: #3b82f6;
+  --chart-3: #22c55e;
+  --chart-4: #f59e0b;
+  --chart-5: #ec4899;
+  --sidebar: #0d1520;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #ee7533;
+  --sidebar-primary-foreground: #091018;
+  --sidebar-accent: #1a2530;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #2d3e4f;
+  --sidebar-ring: #ee7533;
 }
 
 @layer base {
@@ -184,25 +186,25 @@
     }
   }
 
-  /* Glow effects for Executive Command Center */
-  .glow-blue {
-    box-shadow: 0 0 20px oklch(0.65 0.2 250 / 0.3),
-                0 0 40px oklch(0.65 0.2 250 / 0.1);
+  /* Glow effects for Gestão de Impacto */
+  .glow-orange {
+    box-shadow: 0 0 20px rgba(238, 117, 51, 0.3),
+                0 0 40px rgba(238, 117, 51, 0.1);
   }
   
-  .glow-amber {
-    box-shadow: 0 0 20px oklch(0.75 0.18 70 / 0.3),
-                0 0 40px oklch(0.75 0.18 70 / 0.1);
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(33, 50, 66, 0.3),
+                0 0 40px rgba(33, 50, 66, 0.1);
   }
   
   .glow-emerald {
-    box-shadow: 0 0 20px oklch(0.7 0.17 160 / 0.3),
-                0 0 40px oklch(0.7 0.17 160 / 0.1);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3),
+                0 0 40px rgba(34, 197, 94, 0.1);
   }
   
   .glow-coral {
-    box-shadow: 0 0 20px oklch(0.65 0.2 25 / 0.3),
-                0 0 40px oklch(0.65 0.2 25 / 0.1);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3),
+                0 0 40px rgba(239, 68, 68, 0.1);
   }
 
   /* Card hover effect */
@@ -212,11 +214,11 @@
   
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px oklch(0.65 0.2 250 / 0.2),
-                0 4px 20px oklch(0 0 0 / 0.3);
+    box-shadow: 0 0 30px rgba(238, 117, 51, 0.2),
+                0 4px 20px rgba(0, 0, 0, 0.3);
   }
 
-  /* Animated gradient border */
+  /* Animated gradient border with GI colors */
   .gradient-border {
     position: relative;
   }
@@ -227,7 +229,7 @@
     inset: 0;
     padding: 1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, oklch(0.65 0.2 250), oklch(0.75 0.18 70));
+    background: linear-gradient(135deg, #ee7533, #213242);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
@@ -253,30 +255,30 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Grid pattern background */
+  /* Grid pattern background with GI colors */
   .grid-pattern {
     background-image: 
-      linear-gradient(oklch(0.65 0.2 250 / 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.65 0.2 250 / 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(238, 117, 51, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(238, 117, 51, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
-  /* Scrollbar styling */
+  /* Scrollbar styling with GI colors */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
   
   ::-webkit-scrollbar-track {
-    background: oklch(0.16 0.02 260);
+    background: #091018;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.3 0.02 260);
+    background: #213242;
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.4 0.02 260);
+    background: #ee7533;
   }
 }
