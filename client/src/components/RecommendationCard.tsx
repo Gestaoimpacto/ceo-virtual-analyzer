@@ -22,8 +22,14 @@ interface RecommendationCardProps {
 export function RecommendationCard({ recommendation, index }: RecommendationCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const areaConfig = {
+  const areaConfig: Record<string, { icon: React.ReactNode; color: string; bg: string; label: string }> = {
     financeiro: {
+      icon: <DollarSign className="w-5 h-5" />,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-400/10',
+      label: 'Finanças',
+    },
+    Financeiro: {
       icon: <DollarSign className="w-5 h-5" />,
       color: 'text-emerald-400',
       bg: 'bg-emerald-400/10',
@@ -34,6 +40,18 @@ export function RecommendationCard({ recommendation, index }: RecommendationCard
       color: 'text-primary',
       bg: 'bg-primary/10',
       label: 'Comercial',
+    },
+    Comercial: {
+      icon: <TrendingUp className="w-5 h-5" />,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+      label: 'Comercial',
+    },
+    Marketing: {
+      icon: <TrendingUp className="w-5 h-5" />,
+      color: 'text-orange-400',
+      bg: 'bg-orange-400/10',
+      label: 'Marketing',
     },
     operacional: {
       icon: <Settings className="w-5 h-5" />,
@@ -47,7 +65,19 @@ export function RecommendationCard({ recommendation, index }: RecommendationCard
       bg: 'bg-cyan-400/10',
       label: 'Pessoas',
     },
+    Pessoas: {
+      icon: <Users className="w-5 h-5" />,
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-400/10',
+      label: 'Pessoas',
+    },
     tecnologia: {
+      icon: <Cpu className="w-5 h-5" />,
+      color: 'text-violet-400',
+      bg: 'bg-violet-400/10',
+      label: 'Tecnologia',
+    },
+    Tecnologia: {
       icon: <Cpu className="w-5 h-5" />,
       color: 'text-violet-400',
       bg: 'bg-violet-400/10',

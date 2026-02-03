@@ -20,15 +20,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUpload } from '@/components/FileUpload';
+import { CompanyForm } from '@/components/CompanyForm';
 import { ScoreGauge } from '@/components/ScoreGauge';
 import { DiagnosticCard } from '@/components/DiagnosticCard';
 import { RecommendationCard } from '@/components/RecommendationCard';
+import { ExpandedRecommendation } from '@/components/ExpandedRecommendation';
 import { ActionPlanTimeline } from '@/components/ActionPlanTimeline';
+import { AdvancedActionPlan } from '@/components/AdvancedActionPlan';
 import { RadarChart } from '@/components/RadarChart';
 import { BenchmarkComparison } from '@/components/BenchmarkComparison';
 import { CompanyData, AnalysisResult } from '@/types/company';
 import { mapRowToCompanyData } from '@/lib/excelParser';
 import { analyzeCompany } from '@/lib/analysisEngine';
+import { analyzeCompanyAdvanced } from '@/lib/advancedAnalysisEngine';
+import { generatePDF } from '@/lib/pdfGenerator';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -42,6 +47,7 @@ export default function Home() {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [inputMode, setInputMode] = useState<'form' | 'upload'>('form');
 
   const handleFileSelect = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -79,8 +85,8 @@ export default function Home() {
       
       setCompanyData(company);
       
-      // Run analysis
-      const analysis = analyzeCompany(company);
+      // Run advanced analysis with detailed tactics
+      const analysis = analyzeCompanyAdvanced(company);
       setAnalysisResult(analysis);
       
       toast.success('Análise concluída com sucesso!', {
@@ -198,64 +204,86 @@ export default function Home() {
       <section className="container pb-20">
         <AnimatePresence mode="wait">
           {!analysisResult ? (
-            /* Upload Section */
+            /* Input Section - Form or Upload */
             <motion.div
-              key="upload"
+              key="input"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="max-w-2xl mx-auto"
             >
-              <div className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-semibold text-foreground mb-2" style={{ fontFamily: 'var(--font-display)' }}>
-                    Faça upload do arquivo
-                  </h2>
-                  <p className="text-muted-foreground">
-                    Envie o arquivo Excel com os dados da empresa para iniciar a análise
-                  </p>
-                </div>
-
-                <FileUpload
-                  onFileSelect={handleFileSelect}
-                  isLoading={isLoading}
-                  error={error}
-                />
-
-                {/* Instructions */}
-                <div className="mt-6 p-4 rounded-lg bg-muted/30 border border-border/30">
-                  <h3 className="text-sm font-medium text-foreground mb-2">Instruções:</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• O arquivo deve estar no formato .xlsx ou .csv</li>
-                    <li>• A primeira linha deve conter os cabeçalhos</li>
-                    <li>• Os dados da empresa devem estar na segunda linha</li>
-                    <li>• Preencha o máximo de campos possível para uma análise completa</li>
-                  </ul>
-                </div>
-
-                {/* Demo button */}
-                <div className="mt-4 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        setIsLoading(true);
-                        const response = await fetch('https://files.manuscdn.com/user_upload_by_module/session_file/310419663030066715/kkwWGnMxDiltDRzs.xlsx');
-                        const blob = await response.blob();
-                        const file = new File([blob], 'sample-data.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                        handleFileSelect(file);
-                      } catch (err) {
-                        toast.error('Erro ao carregar dados de exemplo');
-                        setIsLoading(false);
-                      }
-                    }}
-                    disabled={isLoading}
+              {/* Mode Toggle */}
+              <div className="flex justify-center mb-8">
+                <div className="inline-flex rounded-lg border border-border/50 bg-card/30 backdrop-blur-sm p-1">
+                  <button
+                    onClick={() => setInputMode('form')}
+                    className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                      inputMode === 'form'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Carregar Dados de Exemplo
-                  </Button>
+                    Preencher Formulário
+                  </button>
+                  <button
+                    onClick={() => setInputMode('upload')}
+                    className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                      inputMode === 'upload'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Upload de Arquivo
+                  </button>
                 </div>
               </div>
+
+              {inputMode === 'form' ? (
+                /* Form Mode */
+                <CompanyForm
+                  onSubmit={(data) => {
+                    setIsLoading(true);
+                    setCompanyData(data);
+                    const analysis = analyzeCompanyAdvanced(data);
+                    setAnalysisResult(analysis);
+                    setIsLoading(false);
+                    toast.success('Análise concluída com sucesso!', {
+                      description: `Empresa: ${data.empresa}`,
+                    });
+                  }}
+                  isLoading={isLoading}
+                />
+              ) : (
+                /* Upload Mode */
+                <div className="max-w-2xl mx-auto">
+                  <div className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8">
+                    <div className="text-center mb-6">
+                      <h2 className="text-2xl font-semibold text-foreground mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+                        Faça upload do arquivo
+                      </h2>
+                      <p className="text-muted-foreground">
+                        Envie o arquivo Excel com os dados da empresa para iniciar a análise
+                      </p>
+                    </div>
+
+                    <FileUpload
+                      onFileSelect={handleFileSelect}
+                      isLoading={isLoading}
+                      error={error}
+                    />
+
+                    {/* Instructions */}
+                    <div className="mt-6 p-4 rounded-lg bg-muted/30 border border-border/30">
+                      <h3 className="text-sm font-medium text-foreground mb-2">Instruções:</h3>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li>• O arquivo deve estar no formato .xlsx ou .csv</li>
+                        <li>• A primeira linha deve conter os cabeçalhos</li>
+                        <li>• Os dados da empresa devem estar na segunda linha</li>
+                        <li>• Preencha o máximo de campos possível para uma análise completa</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           ) : (
             /* Analysis Results */
@@ -297,7 +325,20 @@ export default function Home() {
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Nova Análise
                   </Button>
-                  <Button size="sm" onClick={() => toast.info('Funcionalidade em desenvolvimento')}>
+                  <Button 
+                    size="sm" 
+                    onClick={async () => {
+                      if (analysisResult && companyData) {
+                        try {
+                          toast.info('Gerando PDF...');
+                          await generatePDF(analysisResult, companyData);
+                          toast.success('PDF gerado com sucesso!');
+                        } catch (err) {
+                          toast.error('Erro ao gerar PDF');
+                        }
+                      }
+                    }}
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     Exportar PDF
                   </Button>
@@ -426,7 +467,7 @@ export default function Home() {
                       </div>
                     </div>
                     {analysisResult.recomendacoesPrioritarias.map((rec, index) => (
-                      <RecommendationCard key={rec.id} recommendation={rec} index={index} />
+                      <ExpandedRecommendation key={rec.id} recommendation={rec} index={index} />
                     ))}
                   </div>
                 </TabsContent>
@@ -447,7 +488,7 @@ export default function Home() {
                         </p>
                       </div>
                     </div>
-                    <ActionPlanTimeline plano={analysisResult.planoAcao90Dias} />
+                    <AdvancedActionPlan plano={analysisResult.planoAcao90Dias} />
                   </div>
                 </TabsContent>
               </Tabs>

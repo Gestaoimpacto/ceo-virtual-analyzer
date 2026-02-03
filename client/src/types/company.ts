@@ -123,30 +123,39 @@ export interface AnalysisResult {
   
   // Recomendações priorizadas
   recomendacoesPrioritarias: Recomendacao[];
-  planoAcao90Dias: PlanoAcao[];
+  planoAcao90Dias: PlanoAcao[] | ActionPlanWeek[];
   
   // Benchmarks do setor
   benchmarks: BenchmarkSetor;
 }
 
 export interface DiagnosticoArea {
-  area: string;
+  area?: string;
   status: 'critico' | 'atencao' | 'adequado' | 'excelente';
   pontosFortesText: string[];
   pontosAtencaoText: string[];
   oportunidades: string[];
 }
 
+// Alias para compatibilidade
+export type DiagnosticArea = DiagnosticoArea;
+
 export interface Recomendacao {
-  id: number;
-  area: 'financeiro' | 'comercial' | 'operacional' | 'pessoas' | 'tecnologia' | 'estrategia';
+  id: number | string;
+  area: 'financeiro' | 'comercial' | 'operacional' | 'pessoas' | 'tecnologia' | 'estrategia' | 'Financeiro' | 'Comercial' | 'Marketing' | 'Pessoas' | 'Tecnologia';
   prioridade: 'alta' | 'media' | 'baixa';
   titulo: string;
   descricao: string;
   impactoEsperado: string;
   prazoSugerido: string;
   recursos: string;
+  passos?: string[];
+  ferramentas?: string[];
+  metricas?: string[];
 }
+
+// Alias para compatibilidade
+export type Recommendation = Recomendacao;
 
 export interface PlanoAcao {
   semana: number;
@@ -157,8 +166,27 @@ export interface AcaoSemana {
   acao: string;
   responsavel: string;
   entregavel: string;
-  area: string;
+  area?: string;
+  recursos?: string;
+  metricas?: string;
 }
+
+// Tipo expandido para plano de ação detalhado
+export interface ActionPlanWeek {
+  semana: number;
+  fase: string;
+  objetivo: string;
+  acoes: {
+    acao: string;
+    responsavel: string;
+    entregavel: string;
+    recursos: string;
+    metricas: string;
+  }[];
+}
+
+// Alias para compatibilidade
+export type PlanoAcaoSemana = ActionPlanWeek;
 
 export interface BenchmarkSetor {
   setor: string;
