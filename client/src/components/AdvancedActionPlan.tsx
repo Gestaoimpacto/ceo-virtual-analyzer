@@ -16,7 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
@@ -52,7 +52,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
   const [expandedWeeks, setExpandedWeeks] = useState<number[]>([1, 2]);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const { toast } = useToast();
 
   const exportToGestaoImpacto = async () => {
     setIsExporting(true);
@@ -62,8 +61,7 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
       
       if (!token) {
         window.open('https://gestaodash-fcqqje9n.manus.space/connect-ceogi', '_blank' );
-        toast({
-          title: 'Conecte sua conta',
+        toast.info('Conecte sua conta', {
           description: 'Faça login no Gestão de Impacto e gere um token de integração.',
         });
         setIsExporting(false);
@@ -84,8 +82,7 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
 
       if (response.ok) {
         const data = await response.json();
-        toast({
-          title: 'Projeto criado com sucesso!',
+        toast.success('Projeto criado com sucesso!', {
           description: `${data.tasksCreated} tarefas foram criadas no Gestão de Impacto.`,
         });
         window.open(`https://gestaodash-fcqqje9n.manus.space/projects/${data.projectId}`, '_blank' );
@@ -93,10 +90,8 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
         throw new Error('Falha ao criar projeto');
       }
     } catch (error) {
-      toast({
-        title: 'Erro ao exportar',
+      toast.error('Erro ao exportar', {
         description: 'Não foi possível criar o projeto. Tente novamente.',
-        variant: 'destructive',
       });
     } finally {
       setIsExporting(false);
