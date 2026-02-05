@@ -19,13 +19,11 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { Progress } from '@/components/ui/progress';
 
 interface AdvancedActionPlanProps {
   plano: ActionPlanWeek[] | PlanoAcao[];
 }
 
-// Helper para normalizar o plano
 function normalizeActionPlan(plano: ActionPlanWeek[] | PlanoAcao[]): ActionPlanWeek[] {
   return plano.map((item) => {
     if ('fase' in item && 'objetivo' in item) {
@@ -63,8 +61,7 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
       const token = localStorage.getItem('gestao_impacto_token');
       
       if (!token) {
-        const gestaoUrl = 'https://gestaodash-fcqqje9n.manus.space';
-        window.open(`${gestaoUrl}/connect-ceogi`, '_blank' );
+        window.open('https://gestaodash-fcqqje9n.manus.space/connect-ceogi', '_blank' );
         toast({
           title: 'Conecte sua conta',
           description: 'Faça login no Gestão de Impacto e gere um token de integração.',
@@ -135,7 +132,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
 
   return (
     <div className="space-y-8">
-      {/* Timeline Overview */}
       <div className="bg-card/30 rounded-xl p-6 border border-border/50">
         <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-primary" />
@@ -193,7 +189,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
         </div>
       </div>
 
-      {/* Detailed Weekly Plan */}
       <div className="space-y-4">
         {normalizedPlano.map((semana, index) => {
           const config = faseConfig[semana.fase] || faseConfig['Diagnóstico'];
@@ -327,7 +322,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
         })}
       </div>
 
-      {/* Export to Gestão de Impacto */}
       <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-xl p-6 border border-orange-500/30">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -361,7 +355,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
         </div>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card/30 rounded-xl p-4 border border-border/50 text-center">
           <div className="text-3xl font-bold text-primary">{normalizedPlano.length}</div>
