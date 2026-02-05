@@ -10,8 +10,13 @@ import {
   ChevronDown,
   ChevronRight,
   Lightbulb,
-  TrendingUp
+  TrendingUp,
+  Rocket,
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { Progress } from '@/components/ui/progress';
@@ -26,7 +31,6 @@ function normalizeActionPlan(plano: ActionPlanWeek[] | PlanoAcao[]): ActionPlanW
     if ('fase' in item && 'objetivo' in item) {
       return item as ActionPlanWeek;
     }
-    // Converter PlanoAcao para ActionPlanWeek
     const planoAcao = item as PlanoAcao;
     return {
       semana: planoAcao.semana,
@@ -49,11 +53,61 @@ function normalizeActionPlan(plano: ActionPlanWeek[] | PlanoAcao[]): ActionPlanW
 export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
   const [expandedWeeks, setExpandedWeeks] = useState<number[]>([1, 2]);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const exportToGestaoImpacto = async () => {
+    setIsExporting(true);
+    try {
+      const normalizedData = normalizeActionPlan(plano);
+      const token = localStorage.getItem('gestao_impacto_token');
+      
+      if (!token) {
+        const gestaoUrl = 'https://gestaodash-fcqqje9n.manus.space';
+        window.open(`${gestaoUrl}/connect-ceogi`, '_blank' );
+        toast({
+          title: 'Conecte sua conta',
+          description: 'Faça login no Gestão de Impacto e gere um token de integração.',
+        });
+        setIsExporting(false);
+        return;
+      }
+
+      const response = await fetch('https://gestaodash-fcqqje9n.manus.space/api/integration/ceogi/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          planoAcao: normalizedData,
+          nomeEmpresa: 'Plano CEO GI',
+        } ),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: 'Projeto criado com sucesso!',
+          description: `${data.tasksCreated} tarefas foram criadas no Gestão de Impacto.`,
+        });
+        window.open(`https://gestaodash-fcqqje9n.manus.space/projects/${data.projectId}`, '_blank' );
+      } else {
+        throw new Error('Falha ao criar projeto');
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro ao exportar',
+        description: 'Não foi possível criar o projeto. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
   
-  // Normalizar plano para ActionPlanWeek[]
   const normalizedPlano = normalizeActionPlan(plano);
 
-  // Agrupar semanas por fase
   const fases = normalizedPlano.reduce((acc, semana) => {
     if (!acc[semana.fase]) {
       acc[semana.fase] = [];
@@ -63,41 +117,17 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
   }, {} as Record<string, ActionPlanWeek[]>);
 
   const faseConfig: Record<string, { color: string; bg: string; icon: React.ReactNode }> = {
-    'Diagnóstico': {
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-400/10',
-      icon: <Lightbulb className="w-5 h-5" />,
-    },
-    'Planejamento': {
-      color: 'text-blue-400',
-      bg: 'bg-blue-400/10',
-      icon: <Target className="w-5 h-5" />,
-    },
-    'Quick Wins': {
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-400/10',
-      icon: <TrendingUp className="w-5 h-5" />,
-    },
-    'Estruturação': {
-      color: 'text-purple-400',
-      bg: 'bg-purple-400/10',
-      icon: <FileText className="w-5 h-5" />,
-    },
-    'Execução': {
-      color: 'text-orange-400',
-      bg: 'bg-orange-400/10',
-      icon: <CheckCircle2 className="w-5 h-5" />,
-    },
-    'Fechamento': {
-      color: 'text-amber-400',
-      bg: 'bg-amber-400/10',
-      icon: <Calendar className="w-5 h-5" />,
-    },
+    'Diagnóstico': { color: 'text-cyan-400', bg: 'bg-cyan-400/10', icon: <Lightbulb className="w-5 h-5" /> },
+    'Planejamento': { color: 'text-blue-400', bg: 'bg-blue-400/10', icon: <Target className="w-5 h-5" /> },
+    'Quick Wins': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: <TrendingUp className="w-5 h-5" /> },
+    'Estruturação': { color: 'text-purple-400', bg: 'bg-purple-400/10', icon: <FileText className="w-5 h-5" /> },
+    'Execução': { color: 'text-orange-400', bg: 'bg-orange-400/10', icon: <CheckCircle2 className="w-5 h-5" /> },
+    'Fechamento': { color: 'text-amber-400', bg: 'bg-amber-400/10', icon: <Calendar className="w-5 h-5" /> },
   };
 
   const toggleWeek = (semana: number) => {
     setExpandedWeeks(prev => 
-      prev.includes(semana) 
+      prev.includes(semana)
         ? prev.filter(s => s !== semana)
         : [...prev, semana]
     );
@@ -112,7 +142,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
           Visão Geral do Plano de 90 Dias
         </h3>
         
-        {/* Phase Progress */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           {Object.entries(fases).map(([fase, semanas]) => {
             const config = faseConfig[fase] || faseConfig['Diagnóstico'];
@@ -141,14 +170,13 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
           })}
         </div>
 
-        {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Progresso do Trimestre</span>
             <span className="text-foreground font-medium">12 semanas</span>
           </div>
           <div className="h-3 bg-muted/30 rounded-full overflow-hidden flex">
-            {Object.entries(fases).map(([fase, semanas], index) => {
+            {Object.entries(fases).map(([fase, semanas]) => {
               const config = faseConfig[fase] || faseConfig['Diagnóstico'];
               const width = (semanas.length / 12) * 100;
               
@@ -185,13 +213,11 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
                   : "bg-card/30 border-border/50"
               )}
             >
-              {/* Week Header */}
               <button
                 onClick={() => toggleWeek(semana.semana)}
                 className="w-full p-4 flex items-center justify-between hover:bg-muted/10 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  {/* Week Number */}
                   <div className={cn(
                     "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg",
                     config.bg,
@@ -226,7 +252,6 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
                 </div>
               </button>
 
-              {/* Week Details */}
               <AnimatePresence>
                 {isExpanded && (
                   <motion.div
@@ -300,6 +325,40 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Export to Gestão de Impacto */}
+      <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-xl p-6 border border-orange-500/30">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Rocket className="w-6 h-6 text-orange-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Transforme em Projeto</h3>
+              <p className="text-sm text-muted-foreground">
+                Exporte este plano de ação para o Gestão de Impacto e acompanhe a execução
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={exportToGestaoImpacto}
+            disabled={isExporting}
+            className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+          >
+            {isExporting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-4 h-4" />
+                Criar Projeto no Gestão de Impacto
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Summary Stats */}
