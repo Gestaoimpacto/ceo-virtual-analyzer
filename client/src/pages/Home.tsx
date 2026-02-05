@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
+import { getLoginUrl } from '@/const';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Brain, 
@@ -13,6 +16,9 @@ import {
   Sparkles,
   Download,
   RefreshCw,
+  Save,
+  History,
+  LogIn,
   Building2,
   MapPin,
   Calendar
@@ -42,16 +48,63 @@ const HERO_BG = "https://private-us-east-1.manuscdn.com/sessionFile/mpFmyPTrXnWm
 const ANALYSIS_ICON = "https://private-us-east-1.manuscdn.com/sessionFile/mpFmyPTrXnWmKetPsq4txv/sandbox/YYCdgAnwDYJJz8Rhjoq5pe-img-2_1770081644000_na1fn_Y2VvLWFuYWx5c2lzLWljb24.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvbXBGbXlQVHJYbldtS2V0UHNxNHR4di9zYW5kYm94L1lZQ2RnQW53RFlKSno4Umhqb3E1cGUtaW1nLTJfMTc3MDA4MTY0NDAwMF9uYTFmbl9ZMlZ2TFdGdVlXeDVjMmx6TFdsamIyNC5wbmc~eC1vc3MtcHJvY2Vzcz1pbWFnZS9yZXNpemUsd18xOTIwLGhfMTkyMC9mb3JtYXQsd2VicC9xdWFsaXR5LHFfODAiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3OTg3NjE2MDB9fX1dfQ__&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=p4ubG5dphv4SRdfaCMOL9tQlLIqF1LfFdPbVLjBhdb8-pbkicB7FWRe3n4FSJJS9Hfl9YtpotiKMd8xkaogSt5pt0irgfcKACjvLsTInfRLW5U3RPXu-ok6at0NczwmWPtibr8xZ-rwA-VB~rbrR5QdCootXja2Woe3VLYW2rgP8oTUKOI4h~P0Ff0NVeU6VxY8Spt5kgb25lWWncShokKSQXJMF7FvBUWJxlO9ujU1iUmSUIsBuUL409mxcoKX4QQPODOzIyhVYi-m2NWYpkmQSXoxqBSbSjcfAnp-bUdXsg8Zu3xzNIK9P5AbDL3-TO6Y5tZZuI7rr~Gft7B5QEg__";
 
 export default function Home() {
+  // Auth state
+  const { user, isAuthenticated } = useAuth();
+  
+  // Local state
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [inputMode, setInputMode] = useState<'form' | 'upload'>('form');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // tRPC mutations
+  const saveAnalysisMutation = trpc.analysis.save.useMutation({
+    onSuccess: () => {
+      toast.success('Análise salva com sucesso!', {
+        description: 'Você pode acessar seu histórico de análises a qualquer momento.',
+      });
+    },
+    onError: (error) => {
+      toast.error('Erro ao salvar análise', { description: error.message });
+    },
+  });
+
+  // Função para salvar análise no banco de dados
+  const handleSaveAnalysis = async () => {
+    if (!companyData || !analysisResult || !isAuthenticated) {
+      if (!isAuthenticated) {
+        toast.error('Faça login para salvar suas análises');
+      }
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveAnalysisMutation.mutateAsync({
+        empresaNome: companyData.empresa || 'Empresa sem nome',
+        cnpj: companyData.cnpj || undefined,
+        setor: companyData.setor || undefined,
+        cidade: companyData.cidade || undefined,
+        companyData: companyData,
+        analysisResult: analysisResult,
+        scoreGeral: analysisResult.scoreGeral,
+        scoreFinanceiro: analysisResult.scoreFinanceiro,
+        scoreComercial: analysisResult.scoreComercial,
+        scoreOperacional: analysisResult.scoreOperacional,
+        scorePessoas: analysisResult.scorePessoas,
+        scoreTecnologia: analysisResult.scoreTecnologia,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleFileSelect = useCallback(async (file: File) => {
     setIsLoading(true);
-    setError(null);
+    setFormError(null);
     
     try {
       // Read file using XLSX library
@@ -95,7 +148,7 @@ export default function Home() {
       
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao processar arquivo';
-      setError(message);
+      setFormError(message);
       toast.error('Erro ao processar arquivo', { description: message });
     } finally {
       setIsLoading(false);
@@ -105,7 +158,7 @@ export default function Home() {
   const handleReset = () => {
     setCompanyData(null);
     setAnalysisResult(null);
-    setError(null);
+    setFormError(null);
     setActiveTab('overview');
   };
 
@@ -268,7 +321,7 @@ export default function Home() {
                     <FileUpload
                       onFileSelect={handleFileSelect}
                       isLoading={isLoading}
-                      error={error}
+                      error={formError}
                     />
 
                     {/* Instructions */}
@@ -320,11 +373,31 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={handleReset}>
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Nova Análise
                   </Button>
+                  {isAuthenticated ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleSaveAnalysis}
+                      disabled={isSaving}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {isSaving ? 'Salvando...' : 'Salvar Análise'}
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => window.location.href = getLoginUrl()}
+                    >
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Login para Salvar
+                    </Button>
+                  )}
                   <Button 
                     size="sm" 
                     onClick={async () => {
@@ -503,13 +576,21 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Brain className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">CEO Virtual</span>
+              <span className="font-semibold text-foreground">CEO DO GI</span>
             </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Análise empresarial inteligente para tomada de decisão estratégica
-            </p>
+            <div className="flex items-center gap-4">
+              {isAuthenticated && (
+                <a href="/historico" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  <History className="w-4 h-4" />
+                  Meu Histórico
+                </a>
+              )}
+              <p className="text-sm text-muted-foreground text-center">
+                Análise empresarial inteligente para tomada de decisão estratégica
+              </p>
+            </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Todos os direitos reservados
+              © {new Date().getFullYear()} Gestão de Impacto
             </p>
           </div>
         </div>
