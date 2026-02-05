@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AdvancedActionPlanProps {
   plano: ActionPlanWeek[] | PlanoAcao[];
@@ -48,27 +48,82 @@ function normalizeActionPlan(plano: ActionPlanWeek[] | PlanoAcao[]): ActionPlanW
   });
 }
 
-export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
+const GESTAO_IMPACTO_URL = 'https://gestaodash-fcqqje9n.manus.space';
+
+export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps ) {
   const [expandedWeeks, setExpandedWeeks] = useState<number[]>([1, 2]);
   const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+
+  // Check if already connected
+  useEffect(() => {
+    const token = localStorage.getItem('gestao_impacto_token');
+    setIsConnected(!!token);
+  }, []);
+
+  // Listen for auth messages from popup
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'GESTAO_IMPACTO_AUTH') {
+        if (event.data.success && event.data.token) {
+          localStorage.setItem('gestao_impacto_token', event.data.token);
+          setIsConnected(true);
+          toast.success('Conectado ao Gestão de Impacto!');
+        } else {
+          toast.error('Falha na autorização');
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // Check URL for token (redirect flow)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('gi_token');
+    if (token) {
+      localStorage.setItem('gestao_impacto_token', token);
+      setIsConnected(true);
+      toast.success('Conectado ao Gestão de Impacto!');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  const openAuthPopup = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      `${GESTAO_IMPACTO_URL}/authorize-ceogi?redirect=${encodeURIComponent(window.location.href)}`,
+      'gestao_impacto_auth',
+      `width=${width},height=${height},left=${left},top=${top},popup=yes`
+    );
+
+    if (!popup) {
+      // Popup blocked, use redirect instead
+      window.location.href = `${GESTAO_IMPACTO_URL}/authorize-ceogi?redirect=${encodeURIComponent(window.location.href)}`;
+    }
+  };
 
   const exportToGestaoImpacto = async () => {
+    const token = localStorage.getItem('gestao_impacto_token');
+    
+    if (!token) {
+      openAuthPopup();
+      return;
+    }
+
     setIsExporting(true);
     try {
       const normalizedData = normalizeActionPlan(plano);
-      const token = localStorage.getItem('gestao_impacto_token');
-      
-      if (!token) {
-        window.open('https://gestaodash-fcqqje9n.manus.space/connect-ceogi', '_blank' );
-        toast.info('Conecte sua conta', {
-          description: 'Faça login no Gestão de Impacto e gere um token de integração.',
-        });
-        setIsExporting(false);
-        return;
-      }
 
-      const response = await fetch('https://gestaodash-fcqqje9n.manus.space/api/integration/ceogi/import', {
+      const response = await fetch(`${GESTAO_IMPACTO_URL}/api/integration/ceogi/import`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,15 +132,23 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
         body: JSON.stringify({
           planoAcao: normalizedData,
           nomeEmpresa: 'Plano CEO GI',
-        } ),
+        }),
       });
+
+      if (response.status === 401) {
+        // Token expired, re-authorize
+        localStorage.removeItem('gestao_impacto_token');
+        setIsConnected(false);
+        toast.error('Sessão expirada. Clique novamente para reconectar.');
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
         toast.success('Projeto criado com sucesso!', {
           description: `${data.tasksCreated} tarefas foram criadas no Gestão de Impacto.`,
         });
-        window.open(`https://gestaodash-fcqqje9n.manus.space/projects/${data.projectId}`, '_blank' );
+        window.open(`${GESTAO_IMPACTO_URL}/project/${data.projectId}`, '_blank');
       } else {
         throw new Error('Falha ao criar projeto');
       }
@@ -326,7 +389,10 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
             <div>
               <h3 className="text-lg font-semibold text-foreground">Transforme em Projeto</h3>
               <p className="text-sm text-muted-foreground">
-                Exporte este plano de ação para o Gestão de Impacto e acompanhe a execução
+                {isConnected 
+                  ? 'Clique para criar o projeto no Gestão de Impacto'
+                  : 'Conecte sua conta para criar projetos automaticamente'
+                }
               </p>
             </div>
           </div>
@@ -338,12 +404,17 @@ export function AdvancedActionPlan({ plano }: AdvancedActionPlanProps) {
             {isExporting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Exportando...
+                Criando Projeto...
+              </>
+            ) : isConnected ? (
+              <>
+                <ExternalLink className="w-4 h-4" />
+                Criar Projeto no Gestão de Impacto
               </>
             ) : (
               <>
                 <ExternalLink className="w-4 h-4" />
-                Criar Projeto no Gestão de Impacto
+                Conectar e Criar Projeto
               </>
             )}
           </Button>
