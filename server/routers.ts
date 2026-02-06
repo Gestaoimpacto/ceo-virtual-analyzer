@@ -253,8 +253,10 @@ export const appRouter = router({
           .slice(0, 15)
           .map(([item, count]) => ({ item, count }));
 
-      return {
-        allAnalyses: analyses.map(a => ({
+      // Extrair dados estratificados do companyData de cada análise
+      const empresasDetalhadas = analyses.map(a => {
+        const cd = (a.companyData || {}) as any;
+        return {
           id: a.id,
           empresaNome: a.empresaNome,
           cnpj: a.cnpj,
@@ -269,7 +271,144 @@ export const appRouter = router({
           createdAt: a.createdAt,
           userName: a.userName,
           userEmail: a.userEmail,
-        })),
+          // Dados financeiros
+          faturamento6Meses: Number(cd.faturamento6Meses) || 0,
+          lucroLiquido6MesesPercent: Number(cd.lucroLiquido6MesesPercent) || 0,
+          custoAquisicaoCliente: Number(cd.custoAquisicaoCliente) || 0,
+          ltv: Number(cd.ltv) || 0,
+          inadimplenciaPercent: Number(cd.inadimplenciaPercent) || 0,
+          endividamento: cd.endividamento || 'N/A',
+          custoFinanceiroMensal: Number(cd.custoFinanceiroMensal) || 0,
+          ticketMedio: Number(cd.ticketMedio) || 0,
+          metaFaturamentoAnual: Number(cd.metaFaturamentoAnual) || 0,
+          margemLucroAlvo: Number(cd.margemLucroAlvo) || 0,
+          // Dados estruturais
+          numSocios: Number(cd.numSocios) || 0,
+          numColaboradores: Number(cd.numColaboradores) || 0,
+          existeOrganograma: cd.existeOrganograma || 'N/A',
+          camadasLideranca: Number(cd.camadasLideranca) || 0,
+          maturidadeGerencial: cd.maturidadeGerencial || 'N/A',
+          possuiPlanoMetas: cd.possuiPlanoMetas || 'N/A',
+          // Dados de pessoas
+          turnover12Meses: Number(cd.turnover12Meses) || 0,
+          absenteismo: Number(cd.absenteismo) || 0,
+          rituaisGestao: cd.rituaisGestao || 'N/A',
+          modeloMetas: cd.modeloMetas || 'N/A',
+          perfisMapeados: cd.perfisMapeados || 'N/A',
+          // Dados comerciais
+          leadsMes: Number(cd.leadsMes) || 0,
+          taxaConversaoGeral: Number(cd.taxaConversaoGeral) || 0,
+          taxaConversaoFunil: Number(cd.taxaConversaoFunil) || 0,
+          cicloMedioVendas: Number(cd.cicloMedioVendas) || 0,
+          nps: Number(cd.nps) || 0,
+          roasMedio: Number(cd.roasMedio) || 0,
+          winRate: Number(cd.winRate) || 0,
+          canaisAquisicao: cd.canaisAquisicao || 'N/A',
+          crmUtilizado: cd.crmUtilizado || 'N/A',
+          funilDefinido: cd.funilDefinido || 'N/A',
+          // Dados de tecnologia
+          stackAtual: cd.stackAtual || 'N/A',
+          ondeDadosVivem: cd.ondeDadosVivem || 'N/A',
+          dashboardsKPIs: cd.dashboardsKPIs || 'N/A',
+          usoIAHoje: cd.usoIAHoje || 'N/A',
+          integracoesDesejadas: cd.integracoesDesejadas || 'N/A',
+          softwaresFinanceiros: cd.softwaresFinanceiros || 'N/A',
+          // Autoavaliação
+          notaEstrategiaMetas: Number(cd.notaEstrategiaMetas) || 0,
+          notaFinancasLucratividade: Number(cd.notaFinancasLucratividade) || 0,
+          notaComercialMarketing: Number(cd.notaComercialMarketing) || 0,
+          notaOperacoesQualidade: Number(cd.notaOperacoesQualidade) || 0,
+          notaPessoasLideranca: Number(cd.notaPessoasLideranca) || 0,
+          notaTecnologiaDados: Number(cd.notaTecnologiaDados) || 0,
+          // Dados adicionais
+          segmento: cd.segmento || 'N/A',
+          regiaoAtuacao: cd.regiaoAtuacao || 'N/A',
+          apetiteRisco: cd.apetiteRisco || 'N/A',
+          timeComercial: cd.timeComercial || 'N/A',
+          modeloComissionamento: cd.modeloComissionamento || 'N/A',
+          motivosPerda: cd.motivosPerda || 'N/A',
+          principaisObjecoes: cd.principaisObjecoes || 'N/A',
+          concorrenciaPredominante: cd.concorrenciaPredominante || 'N/A',
+          diferenciaisPercebidos: cd.diferenciaisPercebidos || 'N/A',
+          vantagemCompetitiva: cd.vantagemCompetitiva || 'N/A',
+          fortalezasLideranca: cd.fortalezasLideranca || 'N/A',
+          gapsGestao: cd.gapsGestao || 'N/A',
+          areasCarenciaPessoas: cd.areasCarenciaPessoas || 'N/A',
+        };
+      });
+
+      // Calcular agregações financeiras
+      const empresasComFaturamento = empresasDetalhadas.filter(e => e.faturamento6Meses > 0);
+      const totalFaturamento = empresasComFaturamento.reduce((s, e) => s + e.faturamento6Meses, 0);
+      const avgFaturamento = empresasComFaturamento.length > 0 ? Math.round(totalFaturamento / empresasComFaturamento.length) : 0;
+      const avgTicketMedio = empresasDetalhadas.filter(e => e.ticketMedio > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.ticketMedio > 0).reduce((s, e) => s + e.ticketMedio, 0) / empresasDetalhadas.filter(e => e.ticketMedio > 0).length)
+        : 0;
+      const avgMargemLucro = empresasDetalhadas.filter(e => e.lucroLiquido6MesesPercent > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.lucroLiquido6MesesPercent > 0).reduce((s, e) => s + e.lucroLiquido6MesesPercent, 0) / empresasDetalhadas.filter(e => e.lucroLiquido6MesesPercent > 0).length * 10) / 10
+        : 0;
+      const avgInadimplencia = empresasDetalhadas.filter(e => e.inadimplenciaPercent > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.inadimplenciaPercent > 0).reduce((s, e) => s + e.inadimplenciaPercent, 0) / empresasDetalhadas.filter(e => e.inadimplenciaPercent > 0).length * 10) / 10
+        : 0;
+
+      // Calcular agregações estruturais
+      const totalColaboradores = empresasDetalhadas.reduce((s, e) => s + e.numColaboradores, 0);
+      const totalSocios = empresasDetalhadas.reduce((s, e) => s + e.numSocios, 0);
+      const avgColaboradores = empresasDetalhadas.length > 0 ? Math.round(totalColaboradores / empresasDetalhadas.length * 10) / 10 : 0;
+      const avgTurnover = empresasDetalhadas.filter(e => e.turnover12Meses > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.turnover12Meses > 0).reduce((s, e) => s + e.turnover12Meses, 0) / empresasDetalhadas.filter(e => e.turnover12Meses > 0).length * 10) / 10
+        : 0;
+      const avgAbsenteismo = empresasDetalhadas.filter(e => e.absenteismo > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.absenteismo > 0).reduce((s, e) => s + e.absenteismo, 0) / empresasDetalhadas.filter(e => e.absenteismo > 0).length * 10) / 10
+        : 0;
+
+      // Calcular agregações comerciais
+      const avgNPS = empresasDetalhadas.filter(e => e.nps > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.nps > 0).reduce((s, e) => s + e.nps, 0) / empresasDetalhadas.filter(e => e.nps > 0).length)
+        : 0;
+      const avgLeadsMes = empresasDetalhadas.filter(e => e.leadsMes > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.leadsMes > 0).reduce((s, e) => s + e.leadsMes, 0) / empresasDetalhadas.filter(e => e.leadsMes > 0).length)
+        : 0;
+      const avgTaxaConversao = empresasDetalhadas.filter(e => e.taxaConversaoGeral > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.taxaConversaoGeral > 0).reduce((s, e) => s + e.taxaConversaoGeral, 0) / empresasDetalhadas.filter(e => e.taxaConversaoGeral > 0).length * 10) / 10
+        : 0;
+      const avgCicloVendas = empresasDetalhadas.filter(e => e.cicloMedioVendas > 0).length > 0
+        ? Math.round(empresasDetalhadas.filter(e => e.cicloMedioVendas > 0).reduce((s, e) => s + e.cicloMedioVendas, 0) / empresasDetalhadas.filter(e => e.cicloMedioVendas > 0).length)
+        : 0;
+
+      // Faturamento por setor
+      const faturamentoBySetor: Record<string, { total: number; count: number; avg: number }> = {};
+      for (const e of empresasDetalhadas) {
+        const setor = e.setor || 'Não informado';
+        if (!faturamentoBySetor[setor]) faturamentoBySetor[setor] = { total: 0, count: 0, avg: 0 };
+        faturamentoBySetor[setor].total += e.faturamento6Meses;
+        faturamentoBySetor[setor].count += 1;
+      }
+      Object.keys(faturamentoBySetor).forEach(k => {
+        faturamentoBySetor[k].avg = Math.round(faturamentoBySetor[k].total / faturamentoBySetor[k].count);
+      });
+
+      // Distribuição de porte (por número de colaboradores)
+      const porteDistribuicao = {
+        mei: empresasDetalhadas.filter(e => e.numColaboradores <= 1).length,
+        micro: empresasDetalhadas.filter(e => e.numColaboradores >= 2 && e.numColaboradores <= 9).length,
+        pequena: empresasDetalhadas.filter(e => e.numColaboradores >= 10 && e.numColaboradores <= 49).length,
+        media: empresasDetalhadas.filter(e => e.numColaboradores >= 50 && e.numColaboradores <= 99).length,
+        grande: empresasDetalhadas.filter(e => e.numColaboradores >= 100).length,
+      };
+
+      // Distribuição de faixa de faturamento (6 meses)
+      const faixaFaturamento = {
+        ate50k: empresasDetalhadas.filter(e => e.faturamento6Meses > 0 && e.faturamento6Meses <= 50000).length,
+        de50a200k: empresasDetalhadas.filter(e => e.faturamento6Meses > 50000 && e.faturamento6Meses <= 200000).length,
+        de200a500k: empresasDetalhadas.filter(e => e.faturamento6Meses > 200000 && e.faturamento6Meses <= 500000).length,
+        de500kA1M: empresasDetalhadas.filter(e => e.faturamento6Meses > 500000 && e.faturamento6Meses <= 1000000).length,
+        acima1M: empresasDetalhadas.filter(e => e.faturamento6Meses > 1000000).length,
+        naoInformado: empresasDetalhadas.filter(e => e.faturamento6Meses === 0).length,
+      };
+
+      return {
+        allAnalyses: empresasDetalhadas,
         scoresBySetor: data.scoresBySetor,
         scoresByCidade: data.scoresByCidade,
         totalUsers: data.totalUsers,
@@ -281,6 +420,45 @@ export const appRouter = router({
           areasComMaiorDeficit: areaScores,
           empresasEmRisco,
           empresasDestaque,
+        },
+        aggregations: {
+          financeiro: {
+            totalFaturamento,
+            avgFaturamento,
+            avgTicketMedio,
+            avgMargemLucro,
+            avgInadimplencia,
+            avgCustoAquisicao: empresasDetalhadas.filter(e => e.custoAquisicaoCliente > 0).length > 0
+              ? Math.round(empresasDetalhadas.filter(e => e.custoAquisicaoCliente > 0).reduce((s, e) => s + e.custoAquisicaoCliente, 0) / empresasDetalhadas.filter(e => e.custoAquisicaoCliente > 0).length)
+              : 0,
+            avgLTV: empresasDetalhadas.filter(e => e.ltv > 0).length > 0
+              ? Math.round(empresasDetalhadas.filter(e => e.ltv > 0).reduce((s, e) => s + e.ltv, 0) / empresasDetalhadas.filter(e => e.ltv > 0).length)
+              : 0,
+            faturamentoBySetor: Object.entries(faturamentoBySetor).map(([setor, data]) => ({ setor, ...data })),
+            faixaFaturamento,
+          },
+          estrutural: {
+            totalColaboradores,
+            totalSocios,
+            avgColaboradores,
+            avgTurnover,
+            avgAbsenteismo,
+            porteDistribuicao,
+            empresasComOrganograma: empresasDetalhadas.filter(e => e.existeOrganograma?.toLowerCase()?.includes('sim')).length,
+            empresasComPlanoMetas: empresasDetalhadas.filter(e => e.possuiPlanoMetas?.toLowerCase()?.includes('sim')).length,
+          },
+          comercial: {
+            avgNPS,
+            avgLeadsMes,
+            avgTaxaConversao,
+            avgCicloVendas,
+            avgROAS: empresasDetalhadas.filter(e => e.roasMedio > 0).length > 0
+              ? Math.round(empresasDetalhadas.filter(e => e.roasMedio > 0).reduce((s, e) => s + e.roasMedio, 0) / empresasDetalhadas.filter(e => e.roasMedio > 0).length * 10) / 10
+              : 0,
+            avgWinRate: empresasDetalhadas.filter(e => e.winRate > 0).length > 0
+              ? Math.round(empresasDetalhadas.filter(e => e.winRate > 0).reduce((s, e) => s + e.winRate, 0) / empresasDetalhadas.filter(e => e.winRate > 0).length * 10) / 10
+              : 0,
+          },
         },
       };
     }),

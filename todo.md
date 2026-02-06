@@ -33,3 +33,15 @@
 - [x] Gráfico de evolução temporal das análises
 - [x] Seção de causas raiz mais frequentes
 - [x] Exportação completa do dashboard
+
+## Dashboard Admin - Dados Estratificados
+- [x] Armazenar dados completos da empresa no banco (faturamento, sócios, colaboradores, etc.)
+- [x] Aba Visão Geral: faturamento total, médio, por setor; total de colaboradores e sócios
+- [x] Aba Perfil das Empresas: faturamento, ticket médio, margem, inadimplência, endividamento
+- [x] Aba Estrutura: número de sócios, colaboradores, turnover, absenteísmo por empresa
+- [x] Aba Comercial: leads, taxa de conversão, ciclo de vendas, NPS por empresa
+- [x] Aba Financeiro: faturamento, lucro, margem, inadimplência, endividamento detalhado
+- [x] Aba Tecnologia: stack, CRM, uso de IA por empresa
+- [x] Filtros avançados por setor, cidade, faixa de faturamento
+- [x] Cards de resumo com médias e totais agregados
+- [x] Tabela expandível com todos os dados da empresa
