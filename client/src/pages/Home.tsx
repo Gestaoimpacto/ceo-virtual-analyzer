@@ -19,6 +19,8 @@ import {
   Save,
   History,
   LogIn,
+  LogOut,
+  User,
   Building2,
   MapPin,
   Calendar
@@ -49,7 +51,7 @@ const ANALYSIS_ICON = "https://private-us-east-1.manuscdn.com/sessionFile/mpFmyP
 
 export default function Home() {
   // Auth state
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   
   // Local state
   const [isLoading, setIsLoading] = useState(false);
@@ -172,6 +174,56 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#091018]/90 backdrop-blur-md border-b border-white/10">
+        <div className="container flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-3">
+            <Brain className="w-6 h-6 text-primary" />
+            <span className="font-bold text-foreground" style={{ fontFamily: 'var(--font-display)' }}>CEO DO GI</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {isAuthenticated && user ? (
+              <>
+                <a href="/history" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                  <History className="w-4 h-4" />
+                  Meu Histórico
+                </a>
+                <div className="h-4 w-px bg-white/20" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <span className="text-sm text-foreground hidden sm:block">{user.name || user.email || 'Usuário'}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    await logout();
+                    window.location.reload();
+                  }}
+                  className="text-muted-foreground hover:text-red-400 text-xs"
+                >
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => window.location.href = getLoginUrl()}
+                className="bg-primary hover:bg-primary/90 text-white gap-2"
+                size="sm"
+              >
+                <LogIn className="w-4 h-4" />
+                Entrar / Criar Conta
+              </Button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {/* Spacer for fixed nav */}
+      <div className="h-14" />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background */}
