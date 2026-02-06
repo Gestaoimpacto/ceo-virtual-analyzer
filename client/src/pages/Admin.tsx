@@ -42,6 +42,8 @@ import {
   Megaphone,
   Database,
   BarChart2,
+  Calendar,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
@@ -63,9 +65,50 @@ export default function Admin() {
   const [filterSetor, setFilterSetor] = useState('');
   const [filterPorte, setFilterPorte] = useState('');
   const [filterFaixa, setFilterFaixa] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [datePreset, setDatePreset] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [detailView, setDetailView] = useState<'table' | 'cards'>('table');
+
+  // Helper para aplicar atalhos de período
+  const applyDatePreset = (preset: string) => {
+    setDatePreset(preset);
+    const now = new Date();
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+    const todayStr = formatDate(now);
+
+    if (preset === '') {
+      setDateFrom('');
+      setDateTo('');
+      return;
+    }
+    if (preset === '7d') {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      setDateFrom(formatDate(from));
+      setDateTo(todayStr);
+    } else if (preset === '30d') {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 30);
+      setDateFrom(formatDate(from));
+      setDateTo(todayStr);
+    } else if (preset === '90d') {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 90);
+      setDateFrom(formatDate(from));
+      setDateTo(todayStr);
+    } else if (preset === 'mes') {
+      const from = new Date(now.getFullYear(), now.getMonth(), 1);
+      setDateFrom(formatDate(from));
+      setDateTo(todayStr);
+    } else if (preset === 'ano') {
+      const from = new Date(now.getFullYear(), 0, 1);
+      setDateFrom(formatDate(from));
+      setDateTo(todayStr);
+    }
+  };
 
   const dashboardQuery = trpc.admin.dashboard.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === 'admin',
@@ -104,9 +147,24 @@ export default function Admin() {
         if (filterFaixa === 'acima1M') return fat > 1000000;
         return true;
       })();
-      return matchesSearch && matchesSetor && matchesPorte && matchesFaixa;
+      const matchesDate = (() => {
+        if (!dateFrom && !dateTo) return true;
+        const analysisDate = new Date(a.createdAt);
+        if (dateFrom) {
+          const from = new Date(dateFrom);
+          from.setHours(0, 0, 0, 0);
+          if (analysisDate < from) return false;
+        }
+        if (dateTo) {
+          const to = new Date(dateTo);
+          to.setHours(23, 59, 59, 999);
+          if (analysisDate > to) return false;
+        }
+        return true;
+      })();
+      return matchesSearch && matchesSetor && matchesPorte && matchesFaixa && matchesDate;
     });
-  }, [dashboardQuery.data, searchTerm, filterSetor, filterPorte, filterFaixa]);
+  }, [dashboardQuery.data, searchTerm, filterSetor, filterPorte, filterFaixa, dateFrom, dateTo]);
 
   const setores = useMemo(() => {
     if (!dashboardQuery.data?.allAnalyses) return [];
@@ -397,49 +455,123 @@ export default function Admin() {
         </div>
 
         {/* Filtros globais */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar empresa, CNPJ, cidade ou aluno..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
+        <div className="space-y-2 mb-4">
+          {/* Linha 1: Busca + Selects */}
+          <div className="flex flex-wrap gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar empresa, CNPJ, cidade ou aluno..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            <select
+              value={filterSetor}
+              onChange={(e) => setFilterSetor(e.target.value)}
+              className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos os setores</option>
+              {setores.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select
+              value={filterPorte}
+              onChange={(e) => setFilterPorte(e.target.value)}
+              className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todos os portes</option>
+              <option value="mei">MEI (0-1)</option>
+              <option value="micro">Micro (2-9)</option>
+              <option value="pequena">Pequena (10-49)</option>
+              <option value="media">Média (50-99)</option>
+              <option value="grande">Grande (100+)</option>
+            </select>
+            <select
+              value={filterFaixa}
+              onChange={(e) => setFilterFaixa(e.target.value)}
+              className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="">Todas as faixas</option>
+              <option value="ate50k">Até R$ 50k</option>
+              <option value="de50a200k">R$ 50k - 200k</option>
+              <option value="de200a500k">R$ 200k - 500k</option>
+              <option value="de500kA1M">R$ 500k - 1M</option>
+              <option value="acima1M">Acima de R$ 1M</option>
+            </select>
           </div>
-          <select
-            value={filterSetor}
-            onChange={(e) => setFilterSetor(e.target.value)}
-            className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="">Todos os setores</option>
-            {setores.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select
-            value={filterPorte}
-            onChange={(e) => setFilterPorte(e.target.value)}
-            className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="">Todos os portes</option>
-            <option value="mei">MEI (0-1)</option>
-            <option value="micro">Micro (2-9)</option>
-            <option value="pequena">Pequena (10-49)</option>
-            <option value="media">Média (50-99)</option>
-            <option value="grande">Grande (100+)</option>
-          </select>
-          <select
-            value={filterFaixa}
-            onChange={(e) => setFilterFaixa(e.target.value)}
-            className="px-3 py-2 bg-card/50 border border-border/50 rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          >
-            <option value="">Todas as faixas</option>
-            <option value="ate50k">Até R$ 50k</option>
-            <option value="de50a200k">R$ 50k - 200k</option>
-            <option value="de200a500k">R$ 200k - 500k</option>
-            <option value="de500kA1M">R$ 500k - 1M</option>
-            <option value="acima1M">Acima de R$ 1M</option>
-          </select>
+
+          {/* Linha 2: Filtro de Período */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Calendar className="w-4 h-4" />
+              <span className="text-xs font-medium">Período:</span>
+            </div>
+            {/* Atalhos rápidos */}
+            <div className="flex gap-1">
+              {[
+                { id: '7d', label: '7 dias' },
+                { id: '30d', label: '30 dias' },
+                { id: '90d', label: '90 dias' },
+                { id: 'mes', label: 'Este mês' },
+                { id: 'ano', label: 'Este ano' },
+              ].map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => applyDatePreset(datePreset === preset.id ? '' : preset.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                    datePreset === preset.id
+                      ? 'bg-primary text-white'
+                      : 'bg-card/50 border border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/30'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="h-4 w-px bg-border/50" />
+            {/* Inputs de data */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">De:</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => { setDateFrom(e.target.value); setDatePreset('custom'); }}
+                className="px-2 py-1 bg-card/50 border border-border/50 rounded-md text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 [color-scheme:dark]"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Até:</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => { setDateTo(e.target.value); setDatePreset('custom'); }}
+                className="px-2 py-1 bg-card/50 border border-border/50 rounded-md text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 [color-scheme:dark]"
+              />
+            </div>
+            {/* Botão limpar */}
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo(''); setDatePreset(''); }}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Limpar
+              </button>
+            )}
+            {/* Indicador de período ativo */}
+            {(dateFrom || dateTo) && (
+              <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                {dateFrom && dateTo
+                  ? `${new Date(dateFrom + 'T12:00:00').toLocaleDateString('pt-BR')} - ${new Date(dateTo + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                  : dateFrom
+                    ? `A partir de ${new Date(dateFrom + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                    : `Até ${new Date(dateTo + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                }
+              </span>
+            )}
+          </div>
         </div>
 
         {/* ==================== TAB: VISÃO GERAL ==================== */}

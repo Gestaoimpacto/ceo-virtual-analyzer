@@ -45,3 +45,8 @@
 - [x] Filtros avançados por setor, cidade, faixa de faturamento
 - [x] Cards de resumo com médias e totais agregados
 - [x] Tabela expandível com todos os dados da empresa
+
+## Dashboard Admin - Filtro por Datas
+- [x] Adicionar seletor de período (data início e data fim) no dashboard admin
+- [x] Filtrar todas as análises e agregações pelo período selecionado
+- [x] Atalhos rápidos: Últimos 7 dias, 30 dias, 90 dias, Este mês, Este ano, Todos
