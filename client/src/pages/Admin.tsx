@@ -47,6 +47,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'wouter';
+import { ScoreGeralTrendChart, ScoresByAreaTrendChart, VolumeAnalisesTrendChart, FaturamentoTrendChart } from '@/components/TrendCharts';
 
 type TabId = 'overview' | 'financeiro' | 'estrutura' | 'comercial' | 'tecnologia' | 'insights' | 'empresas' | 'detalhes';
 
@@ -642,6 +643,51 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
+              </motion.div>
+            )}
+
+            {/* Gráficos de Tendência Temporal */}
+            {filteredAnalyses.length > 0 && (
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Score Geral ao Longo do Tempo */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card/50 border border-border/50 rounded-xl p-6">
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    Evolução do Score Geral
+                  </h2>
+                  <ScoreGeralTrendChart analyses={filteredAnalyses} />
+                </motion.div>
+
+                {/* Volume de Análises por Mês */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card/50 border border-border/50 rounded-xl p-6">
+                  <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    Volume de Análises por Mês
+                  </h2>
+                  <VolumeAnalisesTrendChart analyses={filteredAnalyses} />
+                </motion.div>
+              </div>
+            )}
+
+            {/* Scores por Área ao Longo do Tempo */}
+            {filteredAnalyses.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card/50 border border-border/50 rounded-xl p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Evolução dos Scores por Área
+                </h2>
+                <ScoresByAreaTrendChart analyses={filteredAnalyses} />
+              </motion.div>
+            )}
+
+            {/* Faturamento Médio ao Longo do Tempo */}
+            {filteredAnalyses.length > 0 && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card/50 border border-border/50 rounded-xl p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                  Evolução do Faturamento Médio
+                </h2>
+                <FaturamentoTrendChart analyses={filteredAnalyses} />
               </motion.div>
             )}
 

@@ -50,3 +50,11 @@
 - [x] Adicionar seletor de período (data início e data fim) no dashboard admin
 - [x] Filtrar todas as análises e agregações pelo período selecionado
 - [x] Atalhos rápidos: Últimos 7 dias, 30 dias, 90 dias, Este mês, Este ano, Todos
+
+## Dashboard Admin - Gráficos de Tendência Temporal
+- [x] Instalar e configurar Chart.js com react-chartjs-2
+- [x] Gráfico de linha: evolução do score médio geral por mês
+- [x] Gráfico de linha: evolução dos scores por área (financeiro, comercial, operacional, pessoas, tecnologia)
+- [x] Gráfico de barras: volume de análises por mês
+- [x] Gráfico de linha: evolução do faturamento médio por mês
+- [x] Integrar gráficos na aba Visão Geral do dashboard
