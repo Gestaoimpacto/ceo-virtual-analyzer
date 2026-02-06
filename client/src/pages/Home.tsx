@@ -21,6 +21,7 @@ import {
   LogIn,
   LogOut,
   User,
+  Shield,
   Building2,
   MapPin,
   Calendar
@@ -37,6 +38,7 @@ import { ActionPlanTimeline } from '@/components/ActionPlanTimeline';
 import { AdvancedActionPlan } from '@/components/AdvancedActionPlan';
 import { RadarChart } from '@/components/RadarChart';
 import { BenchmarkComparison } from '@/components/BenchmarkComparison';
+import { AIRecommendations } from '@/components/AIRecommendations';
 import { CompanyData, AnalysisResult } from '@/types/company';
 import { mapRowToCompanyData } from '@/lib/excelParser';
 import { analyzeCompany } from '@/lib/analysisEngine';
@@ -184,7 +186,13 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {isAuthenticated && user ? (
               <>
-                <a href="/history" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+                {user.role === 'admin' && (
+                  <a href="/admin" className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1.5">
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </a>
+                )}
+                <a href="/historico" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5">
                   <History className="w-4 h-4" />
                   Meu Histórico
                 </a>
@@ -489,6 +497,10 @@ export default function Home() {
                     <Settings className="w-4 h-4 mr-2" />
                     Plano de Ação
                   </TabsTrigger>
+                  <TabsTrigger value="ai-ceo" className="rounded-lg">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    IA CEO
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* Overview Tab */}
@@ -615,6 +627,17 @@ export default function Home() {
                     </div>
                     <AdvancedActionPlan plano={analysisResult.planoAcao90Dias} />
                   </div>
+                </TabsContent>
+
+                {/* AI CEO Tab */}
+                <TabsContent value="ai-ceo" className="mt-6">
+                  {companyData && analysisResult && (
+                    <AIRecommendations
+                      companyData={companyData}
+                      analysisResult={analysisResult}
+                      isAuthenticated={isAuthenticated}
+                    />
+                  )}
                 </TabsContent>
               </Tabs>
             </motion.div>

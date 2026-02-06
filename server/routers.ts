@@ -1,12 +1,12 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { saveCompanyAnalysis, getUserAnalyses, getAnalysisById, deleteAnalysis, countUserAnalyses } from "./db";
+import { saveCompanyAnalysis, getUserAnalyses, getAnalysisById, deleteAnalysis, countUserAnalyses, getAllAnalyses, getAdminStats, countAllAnalyses } from "./db";
+import { invokeLLM } from "./_core/llm";
 
 export const appRouter = router({
-  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -101,6 +101,160 @@ export const appRouter = router({
       const count = await countUserAnalyses(ctx.user.id);
       return { count };
     }),
+  }),
+
+  // Rotas administrativas
+  admin: router({
+    // Listar todas as análises
+    allAnalyses: adminProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(500).optional().default(100),
+        offset: z.number().min(0).optional().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        const limit = input?.limit || 100;
+        const offset = input?.offset || 0;
+        const analyses = await getAllAnalyses(limit, offset);
+        const total = await countAllAnalyses();
+        
+        return { analyses, total };
+      }),
+
+    // Estatísticas gerais
+    stats: adminProcedure.query(async () => {
+      const stats = await getAdminStats();
+      return stats;
+    }),
+  }),
+
+  // Integração com IA Generativa
+  ai: router({
+    // Gerar recomendações personalizadas com IA
+    generateRecommendations: protectedProcedure
+      .input(z.object({
+        empresaNome: z.string(),
+        setor: z.string().optional(),
+        cidade: z.string().optional(),
+        scoreGeral: z.number(),
+        scoreFinanceiro: z.number(),
+        scoreComercial: z.number(),
+        scoreOperacional: z.number(),
+        scorePessoas: z.number(),
+        scoreTecnologia: z.number(),
+        companyData: z.any(),
+        analysisResult: z.any(),
+      }))
+      .mutation(async ({ input }) => {
+        const systemPrompt = `Você é um CEO experiente e consultor empresarial de alto nível, especialista em:
+- Finanças corporativas e gestão financeira
+- Marketing digital e tradicional
+- CRM e gestão de relacionamento com clientes
+- Vendas e estratégia comercial
+- Inteligência Artificial aplicada a negócios
+- Gestão de pessoas e cultura organizacional
+- Processos e operações
+
+Seu papel é analisar os dados de uma empresa e fornecer recomendações ALTAMENTE PERSONALIZADAS, PRÁTICAS e ACIONÁVEIS.
+
+REGRAS:
+1. Seja específico - não dê conselhos genéricos. Use os dados reais da empresa.
+2. Priorize por impacto - comece pelo que vai gerar mais resultado em menos tempo.
+3. Inclua números e métricas quando possível.
+4. Sugira ferramentas e metodologias específicas.
+5. Considere o porte da empresa e o setor de atuação.
+6. Responda em português brasileiro.
+7. Use formatação markdown para organizar a resposta.`;
+
+        const companyContext = `
+## Dados da Empresa
+- **Nome**: ${input.empresaNome}
+- **Setor**: ${input.setor || 'Não informado'}
+- **Cidade**: ${input.cidade || 'Não informada'}
+
+## Scores de Maturidade (0-100)
+- **Score Geral**: ${input.scoreGeral}/100
+- **Financeiro**: ${input.scoreFinanceiro}/100
+- **Comercial**: ${input.scoreComercial}/100
+- **Operacional**: ${input.scoreOperacional}/100
+- **Pessoas**: ${input.scorePessoas}/100
+- **Tecnologia**: ${input.scoreTecnologia}/100
+
+## Dados Detalhados
+${JSON.stringify(input.companyData, null, 2)}
+`;
+
+        const userPrompt = `Analise os dados desta empresa e forneça um relatório CEO completo com:
+
+${companyContext}
+
+Forneça:
+
+### 1. DIAGNÓSTICO EXECUTIVO (3-4 parágrafos)
+Análise geral da situação da empresa, pontos fortes e fracos mais críticos.
+
+### 2. TOP 5 AÇÕES PRIORITÁRIAS (próximos 30 dias)
+Para cada ação:
+- O que fazer (específico)
+- Por que é urgente
+- Resultado esperado
+- Investimento estimado (se aplicável)
+
+### 3. ESTRATÉGIA COMERCIAL E MARKETING
+- Táticas específicas para aumentar vendas
+- Canais de aquisição recomendados para o setor
+- Sugestões de campanhas e conteúdo
+- Métricas a acompanhar
+
+### 4. GESTÃO FINANCEIRA
+- Análise de margem e lucratividade
+- Recomendações para redução de custos
+- Estratégias de precificação
+- Indicadores financeiros a monitorar
+
+### 5. GESTÃO DE PESSOAS E PROCESSOS
+- Estrutura organizacional recomendada
+- Processos prioritários para documentar
+- Cultura e engajamento
+- Indicadores de RH
+
+### 6. TECNOLOGIA E INOVAÇÃO
+- Ferramentas recomendadas para o porte/setor
+- Automações prioritárias
+- Uso de IA no negócio
+- Roadmap tecnológico
+
+### 7. PLANO DE AÇÃO 90 DIAS
+Cronograma detalhado mês a mês com entregas específicas.`;
+
+        try {
+          const response = await invokeLLM({
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          });
+
+          const content = response.choices[0]?.message?.content;
+          const textContent = typeof content === 'string' 
+            ? content 
+            : Array.isArray(content) 
+              ? content.filter(c => c.type === 'text').map(c => (c as { type: 'text'; text: string }).text).join('\n')
+              : '';
+
+          return { 
+            success: true, 
+            recommendation: textContent,
+            model: response.model,
+          };
+        } catch (error) {
+          console.error("[AI] Failed to generate recommendations:", error);
+          return { 
+            success: false, 
+            recommendation: "Não foi possível gerar as recomendações da IA neste momento. Por favor, tente novamente.",
+            error: error instanceof Error ? error.message : "Erro desconhecido",
+          };
+        }
+      }),
   }),
 });
 

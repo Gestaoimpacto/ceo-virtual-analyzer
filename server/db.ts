@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, count, avg } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, companyAnalyses, InsertCompanyAnalysis, CompanyAnalysis } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -211,6 +211,140 @@ export async function countUserAnalyses(userId: number): Promise<number> {
     return result.length;
   } catch (error) {
     console.error("[Database] Failed to count analyses:", error);
+    throw error;
+  }
+}
+
+// ============ Funções Admin ============
+
+/**
+ * Listar todas as análises (admin) com dados do usuário
+ */
+export async function getAllAnalyses(limit: number = 100, offset: number = 0): Promise<Array<CompanyAnalysis & { userName?: string | null; userEmail?: string | null }>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const result = await db
+      .select({
+        id: companyAnalyses.id,
+        userId: companyAnalyses.userId,
+        empresaNome: companyAnalyses.empresaNome,
+        cnpj: companyAnalyses.cnpj,
+        setor: companyAnalyses.setor,
+        cidade: companyAnalyses.cidade,
+        companyData: companyAnalyses.companyData,
+        analysisResult: companyAnalyses.analysisResult,
+        scoreGeral: companyAnalyses.scoreGeral,
+        scoreFinanceiro: companyAnalyses.scoreFinanceiro,
+        scoreComercial: companyAnalyses.scoreComercial,
+        scoreOperacional: companyAnalyses.scoreOperacional,
+        scorePessoas: companyAnalyses.scorePessoas,
+        scoreTecnologia: companyAnalyses.scoreTecnologia,
+        createdAt: companyAnalyses.createdAt,
+        updatedAt: companyAnalyses.updatedAt,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(companyAnalyses)
+      .leftJoin(users, eq(companyAnalyses.userId, users.id))
+      .orderBy(desc(companyAnalyses.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get all analyses:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obter estatísticas gerais (admin)
+ */
+export async function getAdminStats(): Promise<{
+  totalAnalyses: number;
+  totalUsers: number;
+  avgScoreGeral: number;
+  avgScoreFinanceiro: number;
+  avgScoreComercial: number;
+  avgScoreOperacional: number;
+  avgScorePessoas: number;
+  avgScoreTecnologia: number;
+  setoresDistribuicao: Array<{ setor: string; count: number }>;
+}> {
+  const db = await getDb();
+  if (!db) {
+    return {
+      totalAnalyses: 0, totalUsers: 0,
+      avgScoreGeral: 0, avgScoreFinanceiro: 0, avgScoreComercial: 0,
+      avgScoreOperacional: 0, avgScorePessoas: 0, avgScoreTecnologia: 0,
+      setoresDistribuicao: [],
+    };
+  }
+
+  try {
+    // Total de análises
+    const totalResult = await db.select({ total: count() }).from(companyAnalyses);
+    const totalAnalyses = totalResult[0]?.total || 0;
+
+    // Total de usuários únicos com análises
+    const usersResult = await db
+      .selectDistinct({ userId: companyAnalyses.userId })
+      .from(companyAnalyses);
+    const totalUsers = usersResult.length;
+
+    // Médias de scores
+    const avgResult = await db.select({
+      avgGeral: avg(companyAnalyses.scoreGeral),
+      avgFinanceiro: avg(companyAnalyses.scoreFinanceiro),
+      avgComercial: avg(companyAnalyses.scoreComercial),
+      avgOperacional: avg(companyAnalyses.scoreOperacional),
+      avgPessoas: avg(companyAnalyses.scorePessoas),
+      avgTecnologia: avg(companyAnalyses.scoreTecnologia),
+    }).from(companyAnalyses);
+
+    // Distribuição por setor
+    const setoresResult = await db
+      .select({
+        setor: companyAnalyses.setor,
+        count: count(),
+      })
+      .from(companyAnalyses)
+      .groupBy(companyAnalyses.setor);
+
+    return {
+      totalAnalyses,
+      totalUsers,
+      avgScoreGeral: Math.round(Number(avgResult[0]?.avgGeral || 0)),
+      avgScoreFinanceiro: Math.round(Number(avgResult[0]?.avgFinanceiro || 0)),
+      avgScoreComercial: Math.round(Number(avgResult[0]?.avgComercial || 0)),
+      avgScoreOperacional: Math.round(Number(avgResult[0]?.avgOperacional || 0)),
+      avgScorePessoas: Math.round(Number(avgResult[0]?.avgPessoas || 0)),
+      avgScoreTecnologia: Math.round(Number(avgResult[0]?.avgTecnologia || 0)),
+      setoresDistribuicao: setoresResult.map(s => ({
+        setor: s.setor || 'Não informado',
+        count: s.count,
+      })),
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get admin stats:", error);
+    throw error;
+  }
+}
+
+/**
+ * Contar total de análises (admin)
+ */
+export async function countAllAnalyses(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  try {
+    const result = await db.select({ total: count() }).from(companyAnalyses);
+    return result[0]?.total || 0;
+  } catch (error) {
+    console.error("[Database] Failed to count all analyses:", error);
     throw error;
   }
 }
