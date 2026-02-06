@@ -348,3 +348,89 @@ export async function countAllAnalyses(): Promise<number> {
     throw error;
   }
 }
+
+/**
+ * Obter dados detalhados para dashboard admin completo
+ */
+export async function getAdminDashboardData() {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    // Todas as análises com dados completos
+    const allAnalyses = await db
+      .select({
+        id: companyAnalyses.id,
+        userId: companyAnalyses.userId,
+        empresaNome: companyAnalyses.empresaNome,
+        cnpj: companyAnalyses.cnpj,
+        setor: companyAnalyses.setor,
+        cidade: companyAnalyses.cidade,
+        companyData: companyAnalyses.companyData,
+        analysisResult: companyAnalyses.analysisResult,
+        scoreGeral: companyAnalyses.scoreGeral,
+        scoreFinanceiro: companyAnalyses.scoreFinanceiro,
+        scoreComercial: companyAnalyses.scoreComercial,
+        scoreOperacional: companyAnalyses.scoreOperacional,
+        scorePessoas: companyAnalyses.scorePessoas,
+        scoreTecnologia: companyAnalyses.scoreTecnologia,
+        createdAt: companyAnalyses.createdAt,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(companyAnalyses)
+      .leftJoin(users, eq(companyAnalyses.userId, users.id))
+      .orderBy(desc(companyAnalyses.createdAt));
+
+    // Scores médios por setor
+    const scoresBySetor = await db
+      .select({
+        setor: companyAnalyses.setor,
+        count: count(),
+        avgGeral: avg(companyAnalyses.scoreGeral),
+        avgFinanceiro: avg(companyAnalyses.scoreFinanceiro),
+        avgComercial: avg(companyAnalyses.scoreComercial),
+        avgOperacional: avg(companyAnalyses.scoreOperacional),
+        avgPessoas: avg(companyAnalyses.scorePessoas),
+        avgTecnologia: avg(companyAnalyses.scoreTecnologia),
+      })
+      .from(companyAnalyses)
+      .groupBy(companyAnalyses.setor);
+
+    // Scores médios por cidade
+    const scoresByCidade = await db
+      .select({
+        cidade: companyAnalyses.cidade,
+        count: count(),
+        avgGeral: avg(companyAnalyses.scoreGeral),
+      })
+      .from(companyAnalyses)
+      .groupBy(companyAnalyses.cidade);
+
+    // Total de usuários
+    const totalUsersResult = await db.select({ total: count() }).from(users);
+
+    return {
+      allAnalyses,
+      scoresBySetor: scoresBySetor.map(s => ({
+        setor: s.setor || 'Não informado',
+        count: s.count,
+        avgGeral: Math.round(Number(s.avgGeral || 0)),
+        avgFinanceiro: Math.round(Number(s.avgFinanceiro || 0)),
+        avgComercial: Math.round(Number(s.avgComercial || 0)),
+        avgOperacional: Math.round(Number(s.avgOperacional || 0)),
+        avgPessoas: Math.round(Number(s.avgPessoas || 0)),
+        avgTecnologia: Math.round(Number(s.avgTecnologia || 0)),
+      })),
+      scoresByCidade: scoresByCidade.map(c => ({
+        cidade: c.cidade || 'Não informada',
+        count: c.count,
+        avgGeral: Math.round(Number(c.avgGeral || 0)),
+      })),
+      totalUsers: totalUsersResult[0]?.total || 0,
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get admin dashboard data:", error);
+    throw error;
+  }
+}

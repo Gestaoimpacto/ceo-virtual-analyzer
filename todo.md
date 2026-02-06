@@ -21,3 +21,15 @@
 ## Exportação de Histórico Comparativo
 - [x] Criar funcionalidade de comparar duas análises lado a lado
 - [x] Gerar CSV comparativo com evolução entre análises
+
+## Dashboard Admin Completo
+- [x] Expandir API admin com dados detalhados e agregações
+- [x] Cards de KPIs principais (total empresas, score médio, setores, etc.)
+- [x] Gráfico de distribuição de scores por área (radar/bar)
+- [x] Ranking das principais dores e problemas identificados
+- [x] Mapa de oportunidades e necessidades mais comuns
+- [x] Análise por setor com comparativo
+- [x] Tabela detalhada com drill-down por empresa
+- [x] Gráfico de evolução temporal das análises
+- [x] Seção de causas raiz mais frequentes
+- [x] Exportação completa do dashboard
